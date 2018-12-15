@@ -46,7 +46,7 @@ namespace Intersect_Updater
             lbl.ForeColor = Color.White;
 
             lblPercent = new TransparentLabel(percentLabel);
-            lblPercent.ForeColor = Color.Blue;
+            lblPercent.ForeColor = Color.LightBlue;
         }
 
         private void frmUpdater_Load(object sender, EventArgs e)
