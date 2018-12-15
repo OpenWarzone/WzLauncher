@@ -1,0 +1,7 @@
+﻿{
+	"FolderId": "161vzJAI6dPK7RLoeOujxC5SiOwXBsLjQ",
+	"ApiKey":  "AIzaSyBctI8pAZGBO2TNnhcI0esGDX4p8KTxNNE",
+	"UpdaterTitle": "Star Wars: Warzone - Launcher",
+	"Background" : "launcherData/launcher.jpg",
+	"LaunchApplication": "gameData/Warzone.x86.exe"
+}
