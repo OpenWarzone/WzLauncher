@@ -22,6 +22,19 @@ using Newtonsoft.Json;
 using FolderSelect;
 using File = System.IO.File;
 
+internal static class ConcurrentQueueExtensions
+{
+    public static void Clear<T>(this ConcurrentQueue<T> queue)
+    {
+        T item;
+        while (queue.TryDequeue(out item))
+        {
+            // do nothing
+            System.Threading.Thread.Sleep(10);
+        }
+    }
+}
+
 namespace Intersect_Updater
 {
     public partial class frmUpdater : Form
@@ -35,7 +48,7 @@ namespace Intersect_Updater
         private static long FilesDownloaded = 0;
         private static bool CheckingForUpdates = true;
         private static int DotCount = 0;
-        private static Thread[] UpdateThreads = new Thread[10];
+        private static Thread[] UpdateThreads = new Thread[2/*10*/];
         private TransparentLabel lbl;
         private TransparentLabel lblPercent;
 
@@ -115,100 +128,115 @@ namespace Intersect_Updater
 
         private async Task Run()
         {
-            Google.Apis.Services.BaseClientService.Initializer bcs = new Google.Apis.Services.BaseClientService.Initializer();
-            bcs.ApiKey = settings.ApiKey;
-            bcs.ApplicationName = "Warzone Updater";
-            bcs.GZipEnabled = true;
+            bool updatecheck = true;
 
-            Google.Apis.Drive.v3.DriveService service = new Google.Apis.Drive.v3.DriveService(bcs);
-            await CheckFilesRecursively(service,"", settings.FolderId);
-
-            lbl.MeasureString = null;
-
-            var updating = UpdateList.Count > 0;
-            FilesToDownload = UpdateList.Count;
-            CheckingForUpdates = false;
-            if (UpdateList.Count > 0)
+            while (updatecheck)
             {
-                List<Update> updates = new List<Update>();
-                updates.AddRange(UpdateList);
+                lbl.MeasureString = @"Checking for updates, please wait" + new string('.', 3);
+                ConcurrentQueueExtensions.Clear(UpdateList);
 
-                UpdateList = new ConcurrentQueue<Update>();
-                var updatePaths = new HashSet<string>();
-                for (int i = 0; i < updates.Count; i++)
+                Google.Apis.Services.BaseClientService.Initializer bcs = new Google.Apis.Services.BaseClientService.Initializer();
+                bcs.ApiKey = settings.ApiKey;
+                bcs.ApplicationName = "Warzone Updater";
+                bcs.GZipEnabled = true;
+
+                Google.Apis.Drive.v3.DriveService service = new Google.Apis.Drive.v3.DriveService(bcs);
+                await CheckFilesRecursively(service, "", settings.FolderId);
+
+                lbl.MeasureString = null;
+
+                var updating = UpdateList.Count > 0;
+                FilesToDownload = UpdateList.Count;
+                CheckingForUpdates = false;
+                if (UpdateList.Count > 0)
                 {
-                    if (!string.IsNullOrEmpty(settings.Background))
+                    List<Update> updates = new List<Update>();
+                    updates.AddRange(UpdateList);
+
+                    UpdateList = new ConcurrentQueue<Update>();
+                    var updatePaths = new HashSet<string>();
+                    for (int i = 0; i < updates.Count; i++)
                     {
-                        var backgroundpath = Path.GetFullPath(settings.Background);
-                        var updatePath = Path.GetFullPath(updates[i].FilePath);
-                        if (backgroundpath == updatePath)
+                        if (!string.IsNullOrEmpty(settings.Background))
                         {
-                            var update = updates[i];
-                            updates.Remove(updates[i]);
-                            updatePaths.Add(update.FilePath);
-                            UpdateList.Enqueue(update);
-                            break;
+                            var backgroundpath = Path.GetFullPath(settings.Background);
+                            var updatePath = Path.GetFullPath(updates[i].FilePath);
+                            if (backgroundpath == updatePath)
+                            {
+                                var update = updates[i];
+                                updates.Remove(updates[i]);
+                                updatePaths.Add(update.FilePath);
+                                UpdateList.Enqueue(update);
+                                break;
+                            }
                         }
                     }
-                }
 
 
-                var updatesToRemove = new List<Update>();
-                foreach (var update in updates)
-                {
-                    if (!updatePaths.Contains(update.FilePath))
+                    var updatesToRemove = new List<Update>();
+                    foreach (var update in updates)
                     {
-                        updatePaths.Add(update.FilePath);
+                        if (!updatePaths.Contains(update.FilePath))
+                        {
+                            updatePaths.Add(update.FilePath);
+                        }
+                        else
+                        {
+                            updatesToRemove.Add(update);
+                        }
                     }
-                    else
+
+                    foreach (var update in updatesToRemove)
                     {
-                        updatesToRemove.Add(update);
+                        updates.Remove(update);
+                    }
+
+                    foreach (var update in updates)
+                    {
+                        UpdateList.Enqueue(update);
+                    }
+
+                    BeginInvoke((Action)(() => UpdateStatus()));
+                    for (int i = 0; i < UpdateThreads.Length; i++)
+                    {
+                        UpdateThreads[i] = new Thread(DownloadFiles);
+                        UpdateThreads[i].Start();
                     }
                 }
 
-                foreach (var update in updatesToRemove)
+                var threadsRunning = true;
+                while (threadsRunning && updating)
                 {
-                    updates.Remove(update);
+                    threadsRunning = false;
+                    foreach (var thread in UpdateThreads)
+                    {
+                        if ((thread.IsAlive || thread.ThreadState == System.Threading.ThreadState.Running) && thread.ThreadState != System.Threading.ThreadState.Stopped) threadsRunning = true;
+                        break;
+                    }
+                    Application.DoEvents();
+
+                    // UQ1: Sleep for a moment to not max out CPU core...
+                    System.Threading.Thread.Sleep(1);
                 }
 
-                foreach (var update in updates)
+                lblPercent.Visible = false;
+                lblPercent.CreateGraphics().Clear(Color.Transparent);
+                lblPercent.Text = "";
+
+                progressBar1.Value = 100;
+
+                System.Threading.Thread.Sleep(1000);
+
+                if (updating)
                 {
-                    UpdateList.Enqueue(update);
+                    //BeginInvoke((Action)(() => lbl.Text = @"Updates complete. Launching."));
+                    updatecheck = true;
                 }
-
-                BeginInvoke((Action)(() => UpdateStatus()));
-                for (int i = 0; i < UpdateThreads.Length; i++)
+                else
                 {
-                    UpdateThreads[i] = new Thread(DownloadFiles);
-                    UpdateThreads[i].Start();
+                    BeginInvoke((Action)(() => lbl.Text = @"Game is up to date. Launching."));
+                    updatecheck = false;
                 }
-            }
-
-            var threadsRunning = true;
-            while (threadsRunning && updating)
-            {
-                threadsRunning = false;
-                foreach (var thread in UpdateThreads)
-                {
-                    if (thread.IsAlive) threadsRunning = true;
-                    break;
-                }
-                Application.DoEvents();
-            }
-
-            lblPercent.Visible = false;
-            lblPercent.CreateGraphics().Clear(Color.Transparent);
-            lblPercent.Text = "";
-
-            progressBar1.Value = 100;
-
-            if (updating)
-            {
-                BeginInvoke((Action)(() => lbl.Text = @"Updates complete. Launching."));
-            }
-            else
-            {
-                BeginInvoke((Action)(() => lbl.Text = @"Game is up to date. Launching."));
             }
 
             // Make sure we have a link to JKA base folder...
@@ -356,12 +384,13 @@ namespace Intersect_Updater
                     {
                         //Back off
                         UpdateList.Enqueue(update);
-                        backoff = backoff * 2;
+                        //backoff = backoff * 2;
                         System.Threading.Thread.Sleep(backoff);
                     }
                 }
-            }
 
+                System.Threading.Thread.Sleep(1);
+            }
         }
 
         private bool DownloadUpdate(DriveService service,Update update)
@@ -407,7 +436,7 @@ namespace Intersect_Updater
                                         picBackground.BackgroundImage = Bitmap.FromStream(stream);
                                     }
                                 }
-                                    FilesDownloaded++;
+                                FilesDownloaded++;
                                 break;
                             }
                             case DownloadStatus.Failed:
@@ -446,12 +475,27 @@ namespace Intersect_Updater
                 {
                     if (IsFolder(file.MimeType))
                     {
+                        if (file.Name.Equals(".git"))
+                            continue; // Skip .git dir(s)...
+
+                        if (file.Name.Equals("html"))
+                            continue; // Skip html dir(s)...
+
+                        if (file.Name.Equals("Warzone-Nvidia-Profiles"))
+                                continue; // Skip these dir(s)...
+
                         if (!Directory.Exists(Path.Combine(currentFolder, file.Name)))
                             Directory.CreateDirectory(Path.Combine(currentFolder, file.Name));
                         await CheckFilesRecursively(service, Path.Combine(currentFolder, file.Name), file.Id, null);
                     }
                     else if (IsFile(file.MimeType))
                     {
+                        if (file.Name.StartsWith(".git"))
+                            continue; // Skip .git files...
+
+                        if (file.Name.Equals("INSTALL-HOWTO.txt"))
+                            continue; // Skip old howto readme...
+
                         if (!File.Exists(Path.Combine(currentFolder, file.Name)))
                         {
                             //Queue File Up
