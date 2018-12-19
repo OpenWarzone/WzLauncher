@@ -21,6 +21,7 @@ using Google.Apis.Services;
 using Newtonsoft.Json;
 using FolderSelect;
 using File = System.IO.File;
+using Microsoft.Win32;
 
 namespace Intersect_Updater
 {
@@ -302,6 +303,24 @@ namespace Intersect_Updater
                     }
                 }
 
+                string steamDir = string.Empty;
+
+                using (RegistryKey registryKey = Registry.CurrentUser.OpenSubKey(@"SOFTWARE\Valve\Steam"))
+                {
+                    if (registryKey != null)
+                    {
+                        steamDir = registryKey.GetValue("InstallPath").ToString();
+                        registryKey.Close();
+
+                        string fullDir = steamDir + @"/steamapps/common/Jedi Academy/GameData/base";
+
+                        if (Directory.Exists(fullDir))
+                        {
+                            symLink = fullDir;
+                        }
+                    }
+                }
+
                 while (true)
                 {
                     bool failed = false;
@@ -479,6 +498,14 @@ namespace Intersect_Updater
 
             if (files != null && files.Count > 0)
             {
+                DotCount++;
+                if (DotCount > 3) DotCount = 0;
+
+                if (currentFolder.Length > 0)
+                    UpdateStatus(@"Checking for updates, please wait " + @"(" + currentFolder + @")", DotCount);
+                else
+                    UpdateStatus(@"Checking for updates, please wait", DotCount);
+
                 foreach (var file in files)
                 {
                     if (IsFolder(file.MimeType))
@@ -563,26 +590,27 @@ namespace Intersect_Updater
             e.Graphics.FillRectangle(new SolidBrush(Color.FromArgb(175, 0, 0, 0)), 0, lblStatus.Top, this.Width, /*lblStatus.Height*/this.Height);
         }
 
-        private void UpdateStatus(string text)
+        private void UpdateStatus(string text, int DotCount)
         {
             if (InvokeRequired)
             {
-                this.Invoke(new Action<string>(UpdateStatus), new object[] { text });
+                this.Invoke(new Action<string, int>(UpdateStatus), new object[] { text, DotCount });
                 return;
             }
-            lblStatus.Text = text;
-            lbl.Text = text;
-            lbl.MeasureString = @"Checking for updates, please wait" + new string('.', 3);
+            
+            lblStatus.Text = text + new string('.', DotCount);
+            lbl.Text = text + new string('.', DotCount);
+            lbl.MeasureString = text + new string('.', 3);// @"Checking for updates, please wait" + new string('.', 3);
         }
 
         private void tmrChecking_Tick(object sender, EventArgs e)
         {
-            if (CheckingForUpdates)
+            /*if (CheckingForUpdates)
             {
                 DotCount++;
                 if (DotCount > 3) DotCount = 0;
                 UpdateStatus(@"Checking for updates, please wait" + new string('.', DotCount));
-            }
+            }*/
         }
     }
 }

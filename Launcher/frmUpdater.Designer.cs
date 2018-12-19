@@ -46,7 +46,7 @@
             this.lblStatus.Size = new System.Drawing.Size(729, 15);
             this.lblStatus.TabIndex = 0;
             this.lblStatus.Text = "Please wait, checking for updates";
-            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.lblStatus.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             // 
             // picBackground
             // 
@@ -83,7 +83,7 @@
             this.percentLabel.Name = "percentLabel";
             this.percentLabel.Size = new System.Drawing.Size(732, 16);
             this.percentLabel.TabIndex = 0;
-            this.percentLabel.TextAlign = System.Drawing.ContentAlignment.TopCenter;
+            this.percentLabel.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
             this.percentLabel.Visible = false;
             // 
             // frmUpdater
