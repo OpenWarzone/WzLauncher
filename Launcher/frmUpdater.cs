@@ -22,19 +22,6 @@ using Newtonsoft.Json;
 using FolderSelect;
 using File = System.IO.File;
 
-internal static class ConcurrentQueueExtensions
-{
-    public static void Clear<T>(this ConcurrentQueue<T> queue)
-    {
-        T item;
-        while (queue.TryDequeue(out item))
-        {
-            // do nothing
-            System.Threading.Thread.Sleep(10);
-        }
-    }
-}
-
 namespace Intersect_Updater
 {
     public partial class frmUpdater : Form
@@ -242,65 +229,76 @@ namespace Intersect_Updater
             // Make sure we have a link to JKA base folder...
             string LauncherPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location).ToString();
             string GameDataPath = LauncherPath + @"/gameData";
-            MakeBaseDirLink(GameDataPath);
-
-            //Launch Game
-            await Wait();
-            string AssemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location).ToString();
-            var path = Path.Combine(AssemblyPath, settings.LaunchApplication);
-            var workingDir = Path.GetDirectoryName(path);
-            var psi = new ProcessStartInfo(path);
-            psi.WorkingDirectory = workingDir;
-            psi.Arguments = "+set r_renderer rd-warzone +set fs_game warzone +set g_gametype 11 +set logfile 2";
-            Process.Start(psi);
-            BeginInvoke((Action)(() => Close()));
+            if (!MakeBaseDirLink(GameDataPath))
+            {// Failed to make a symbolic link.
+                await Wait();
+                BeginInvoke((Action)(() => Close()));
+            }
+            else
+            {// Launch Game
+                await Wait();
+                string AssemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location).ToString();
+                var path = Path.Combine(AssemblyPath, settings.LaunchApplication);
+                var workingDir = Path.GetDirectoryName(path);
+                var psi = new ProcessStartInfo(path);
+                psi.WorkingDirectory = workingDir;
+                psi.Arguments = "+set r_renderer rd-warzone +set fs_game warzone +set g_gametype 11 +set logfile 2";
+                Process.Start(psi);
+                BeginInvoke((Action)(() => Close()));
+            }
         }
 
-        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        /*[System.Runtime.InteropServices.DllImport("kernel32.dll")]
         static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, SymbolicLink dwFlags);
 
         enum SymbolicLink
         {
             File = 0,
             Directory = 1
-        }
+        }*/
 
-        private void MakeBaseDirLink(string gameDataFolder)
+        [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+        public static extern bool CreateSymbolicLink(string lpSymlinkFileName, string lpTargetFileName, int dwFlags);
+        static int SYMBOLIC_LINK_FLAG_DIRECTORY = 0x1;
+        static int SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE = 0x2;
+        static int symlinkFlags = 0x0;
+
+        private bool MakeBaseDirLink(string gameDataFolder)
         {
             if (!Directory.Exists(gameDataFolder + @"/base"))
             {
                 // Default "old skool" default JKA base directory...
-                string symbolicLink = @"C:/Program Files (x86)/LucasArts/Star Wars Jedi Knight Jedi Academy/GameData/base";
+                string symLink = @"C:/Program Files (x86)/LucasArts/Star Wars Jedi Knight Jedi Academy/GameData/base";
                 // Default "steam" default JKA base directory...
-                string steamSymbolicLink = @"C:\Program Files (x86)\Steam\steamapps\common\Jedi Academy\GameData\base";
+                string steamSymbolicLink = @"C:/Program Files (x86)/Steam/steamapps/common/Jedi Academy/GameData/base";
                 // Default "old skool" default JKA base directory...
                 string DsymbolicLink = @"D:/Program Files (x86)/LucasArts/Star Wars Jedi Knight Jedi Academy/GameData/base";
                 // Default "steam" default JKA base directory...
-                string DsteamSymbolicLink = @"D:\Program Files (x86)\Steam\steamapps\common\Jedi Academy\GameData\base";
+                string DsteamSymbolicLink = @"D:/Program Files (x86)/Steam/steamapps/common/Jedi Academy/GameData/base";
                 // Our downloaded warzone gameData folder...
                 string fileName = gameDataFolder + @"/base";
 
-                if (!Directory.Exists(symbolicLink))
+                if (!Directory.Exists(symLink))
                 {// If old skool directory does not exist, check steam's default directory, so we can skip the dialog where possible...
                     if (Directory.Exists(steamSymbolicLink))
                     {// Exists in steam, awesome! Use it...
-                        symbolicLink = steamSymbolicLink;
+                        symLink = steamSymbolicLink;
                     }
                 }
 
-                if (!Directory.Exists(symbolicLink))
+                if (!Directory.Exists(symLink))
                 {// Try old skool but on D: drive...
                     if (Directory.Exists(DsymbolicLink))
                     {// Exists on D: drive, awesome! Use it...
-                        symbolicLink = DsymbolicLink;
+                        symLink = DsymbolicLink;
                     }
                 }
 
-                if (!Directory.Exists(symbolicLink))
+                if (!Directory.Exists(symLink))
                 {// Try steam but on D: drive...
                     if (Directory.Exists(DsteamSymbolicLink))
                     {// Exists in steam, awesome! Use it...
-                        symbolicLink = DsteamSymbolicLink;
+                        symLink = DsteamSymbolicLink;
                     }
                 }
 
@@ -308,7 +306,7 @@ namespace Intersect_Updater
                 {
                     bool failed = false;
 
-                    if (!Directory.Exists(symbolicLink))
+                    if (!Directory.Exists(symLink))
                     {// We didn't see JKA in any default places, ask the player via dialog to select their base dir...
                         var folderDialog = new FolderSelectDialog();
                         folderDialog.Title = @"Please select your Jedi Academy 'base' or 'gamedata' folder.";
@@ -316,18 +314,25 @@ namespace Intersect_Updater
                         if (folderDialog.ShowDialog())
                         {
                             if (folderDialog.FileName.EndsWith("base", StringComparison.CurrentCultureIgnoreCase))
-                                symbolicLink = folderDialog.FileName;
+                                symLink = folderDialog.FileName;
                             else if (folderDialog.FileName.EndsWith("gamedata", StringComparison.CurrentCultureIgnoreCase))
                             {
-                                string finalDir = folderDialog.FileName + "/base";
+                                string finalDir = folderDialog.FileName + @"/base";
 
                                 if (Directory.Exists(finalDir))
-                                    symbolicLink = finalDir;
+                                    symLink = finalDir;
                                 else
                                     failed = true;
                             }
                             else
                                 failed = true;
+                        }
+                        else
+                        {
+                            string dialogMessageBoxText = "The installer was unable to create a dialog to select your Jedi Academy 'base' folder.\n\nPlease copy your Jedi Academy 'base' folder into the GameData folder.";
+                            string dialogCaption = "We had a small issue.";
+                            MessageBox.Show(dialogMessageBoxText, dialogCaption);
+                            return false;
                         }
                     }
 
@@ -339,8 +344,11 @@ namespace Intersect_Updater
                     MessageBox.Show(messageBoxText, caption);
                 }
 
-                CreateSymbolicLink(fileName, symbolicLink, SymbolicLink.Directory);
+                symlinkFlags = SYMBOLIC_LINK_FLAG_DIRECTORY | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                CreateSymbolicLink(fileName, symLink, symlinkFlags/*SymbolicLink.Directory*/);
             }
+
+            return true;
         }
 
         private void UpdateStatus()
@@ -575,6 +583,19 @@ namespace Intersect_Updater
                 if (DotCount > 3) DotCount = 0;
                 UpdateStatus(@"Checking for updates, please wait" + new string('.', DotCount));
             }
+        }
+    }
+}
+
+internal static class ConcurrentQueueExtensions
+{
+    public static void Clear<T>(this ConcurrentQueue<T> queue)
+    {
+        T item;
+        while (queue.TryDequeue(out item))
+        {
+            // do nothing
+            System.Threading.Thread.Sleep(10);
         }
     }
 }

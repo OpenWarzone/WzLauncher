@@ -81,8 +81,8 @@ namespace FolderSelect
 		{
 			bool flag = false;
 
-			if (Environment.OSVersion.Version.Major >= 6)
-			{
+			//if (Environment.OSVersion.Version.Major >= 6)
+			//{
 				var r = new Reflector("System.Windows.Forms");
 
 				uint num = 0;
@@ -108,7 +108,7 @@ namespace FolderSelect
 					r.CallAs(typeIFileDialog, dialog, "Unadvise", num);
 					GC.KeepAlive(pfde);
 				}
-			}
+			/*}
 			else
 			{
 				var fbd = new FolderBrowserDialog();
@@ -118,7 +118,7 @@ namespace FolderSelect
 				if (fbd.ShowDialog(new WindowWrapper(hWndOwner)) != DialogResult.OK) return false;
 				ofd.FileName = fbd.SelectedPath;
 				flag = true;
-			}
+			}*/
 
 			return flag;
 		}
