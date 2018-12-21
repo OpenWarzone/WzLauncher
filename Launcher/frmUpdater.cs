@@ -102,6 +102,15 @@ namespace Intersect_Updater
                         using (var ms = new MemoryStream(launcherImage))
                         {
                             picBackground.BackgroundImage = Bitmap.FromStream(ms);
+
+                            picBackground.Controls.Add(icon_discord);
+                            icon_discord.BackColor = Color.Transparent;
+
+                            picBackground.Controls.Add(icon_jkhub);
+                            icon_jkhub.BackColor = Color.Transparent;
+
+                            picBackground.Controls.Add(icon_moddb);
+                            icon_moddb.BackColor = Color.Transparent;
                         }
                     }
                     catch (Exception ex)
@@ -461,6 +470,15 @@ namespace Intersect_Updater
                                     if (backgroundpath == updatePath)
                                     {
                                         picBackground.BackgroundImage = Bitmap.FromStream(stream);
+
+                                        picBackground.Controls.Add(icon_discord);
+                                        icon_discord.BackColor = Color.Transparent;
+
+                                        picBackground.Controls.Add(icon_jkhub);
+                                        icon_jkhub.BackColor = Color.Transparent;
+
+                                        picBackground.Controls.Add(icon_moddb);
+                                        icon_moddb.BackColor = Color.Transparent;
                                     }
                                 }
                                 FilesDownloaded++;
@@ -611,6 +629,21 @@ namespace Intersect_Updater
                 if (DotCount > 3) DotCount = 0;
                 UpdateStatus(@"Checking for updates, please wait" + new string('.', DotCount));
             }*/
+        }
+
+        private void pictureBox1_Click(object sender, EventArgs e)
+        {// Discord
+            System.Diagnostics.Process.Start("https://discord.gg/zQ4CB9S");
+        }
+
+        private void pictureBox2_Click(object sender, EventArgs e)
+        {// JKHub
+            System.Diagnostics.Process.Start("https://jkhub.org/forum/134-star-wars-warzone/");
+        }
+
+        private void pictureBox1_Click_1(object sender, EventArgs e)
+        {// Moddb
+            System.Diagnostics.Process.Start("https://www.moddb.com/mods/star-wars-warzone");
         }
     }
 }
