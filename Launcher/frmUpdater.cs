@@ -36,7 +36,7 @@ namespace Intersect_Updater
         private static long FilesDownloaded = 0;
         private static bool CheckingForUpdates = true;
         private static int DotCount = 0;
-        private static Thread[] UpdateThreads = new Thread[2/*10*/];
+        private static Thread[] UpdateThreads = new Thread[4/*10*/];
         private TransparentLabel lbl;
         private TransparentLabel lblPercent;
 
