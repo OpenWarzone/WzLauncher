@@ -30,11 +30,13 @@ namespace Intersect_Updater
         public Settings settings;
         private static readonly string[] Scopes = new[] { DriveService.Scope.DriveFile, DriveService.Scope.Drive };
         private static ConcurrentQueue<Update> UpdateList = new ConcurrentQueue<Update>();
-        private static long UpdateSize = 0;
+        private static long TotalUpdateSize = 0;
         private static long DownloadedBytes = 0;
         private static long FilesToDownload = 0;
         private static long FilesDownloaded = 0;
-        private static bool CheckingForUpdates = true;
+        private static long SpeedDownloadedBytes = 0;
+        private static DateTime SpeedStartTime = DateTime.Now;
+        //private static bool CheckingForUpdates = true;
         private static int DotCount = 0;
         private static Thread[] UpdateThreads = new Thread[4/*10*/];
         private TransparentLabel lbl;
@@ -144,7 +146,7 @@ namespace Intersect_Updater
 
                 var updating = UpdateList.Count > 0;
                 FilesToDownload = UpdateList.Count;
-                CheckingForUpdates = false;
+                //CheckingForUpdates = false;
                 if (UpdateList.Count > 0)
                 {
                     List<Update> updates = new List<Update>();
@@ -192,6 +194,8 @@ namespace Intersect_Updater
                     {
                         UpdateList.Enqueue(update);
                     }
+
+                    SpeedStartTime = DateTime.Now;
 
                     BeginInvoke((Action)(() => UpdateStatus()));
                     for (int i = 0; i < UpdateThreads.Length; i++)
@@ -379,11 +383,76 @@ namespace Intersect_Updater
             return true;
         }
 
+        static readonly string[] BytesPerSecondBinaryPrefix = { "b/s", "KB/s", "MB/s", "GB/s", "TB/s" }; // , "PB/s", "EB/s", "ZB/s", "YB/s"
+        string GetBytesPerSecondString(double bytes)
+        {
+            int counter = 0;
+            double value = bytes;
+            string text = "";
+            do
+            {
+                text = value.ToString("0.0") + " " + BytesPerSecondBinaryPrefix[counter];
+                value /= 1024;
+                counter++;
+            }
+            while (Math.Floor(value) > 0 && counter < BytesPerSecondBinaryPrefix.Length);
+            return text;
+        }
+
+        static readonly string[] BytesBinaryPrefix = { "bytes", "KB", "MB" };//, "GB", "TB" }; // , "PB", "EB", "ZB", "YB"
+        string GetBytesString(double bytes)
+        {
+            int counter = 0;
+            double value = bytes;
+            string text = "";
+            do
+            {
+                text = value.ToString("0.0") + " " + BytesBinaryPrefix[counter];
+                value /= 1024;
+                counter++;
+            }
+            while (Math.Floor(value) > 0 && counter < BytesBinaryPrefix.Length);
+            return text;
+        }
+
+        string GetBytesCompletedString(double currentbytes, double totalbytes)
+        {
+            int counter = 0;
+            string text = "";
+            string text2 = "";
+            do
+            {
+                text = totalbytes.ToString("0.0") + " " + BytesBinaryPrefix[counter];
+                text2 = currentbytes.ToString("0.0");
+                totalbytes /= 1024;
+                currentbytes /= 1024;
+                counter++;
+            }
+            while (Math.Floor(totalbytes) > 0 && counter < BytesBinaryPrefix.Length);
+            while (Math.Floor(currentbytes) > 0 && counter < BytesBinaryPrefix.Length) ;
+            return text2 + "/" + text;
+        }
+
         private void UpdateStatus()
         {
-            var percentage = ((float) FilesDownloaded / (float) FilesToDownload) * 100f;
-            //lbl.Text = "Updates found! Downloading updates! " +  (int)percentage + "% Done";
-            lbl.Text = "Downloading " + (int)(FilesToDownload - FilesDownloaded) + " updates...";
+            double currentSpeed = 0;
+            var timer = DateTime.Now - SpeedStartTime;
+
+            currentSpeed += (double)SpeedDownloadedBytes / (timer.TotalSeconds);
+            SpeedStartTime = DateTime.Now;
+            SpeedDownloadedBytes = 0;
+
+            //var percentage = ((float) FilesDownloaded / (float) FilesToDownload) * 100f; // based on just number of updates...
+            double percentage = ((double)DownloadedBytes / (double)TotalUpdateSize) * 100.0f; // based on updates bytes sizes...
+
+            if (currentSpeed <= 0 || double.IsInfinity(currentSpeed) || double.IsNaN(currentSpeed))
+            {
+                lbl.Text = "Downloading " + (int)(FilesToDownload - FilesDownloaded) + " updates..." + GetBytesCompletedString(DownloadedBytes, TotalUpdateSize);
+            }
+            else
+            {
+                lbl.Text = "Downloading " + (int)(FilesToDownload - FilesDownloaded) + " updates... " + GetBytesCompletedString(DownloadedBytes, TotalUpdateSize) + " at " + GetBytesPerSecondString(currentSpeed);
+            }
 
             progressBar1.Visible = true;
             progressBar1.Value = (int)percentage;
@@ -410,11 +479,12 @@ namespace Intersect_Updater
             while (!UpdateList.IsEmpty)
             {
                 Update update;
+
                 if (UpdateList.TryDequeue(out update))
                 {
                     if (DownloadUpdate(service, update))
                     {
-
+                        
                     }
                     else
                     {
@@ -454,6 +524,9 @@ namespace Intersect_Updater
                             case DownloadStatus.Downloading:
                             {
                                 var diff = progress.BytesDownloaded - lastProgress;
+
+                                SpeedDownloadedBytes += diff;
+
                                 DownloadedBytes += diff;
                                 lastProgress = progress.BytesDownloaded;
                                 break;
@@ -461,6 +534,9 @@ namespace Intersect_Updater
                             case DownloadStatus.Completed:
                             {
                                 var diff = progress.BytesDownloaded - lastProgress;
+
+                                SpeedDownloadedBytes += diff;
+
                                 DownloadedBytes += diff;
                                 lastProgress = progress.BytesDownloaded;
                                 if (!string.IsNullOrEmpty(settings.Background))
@@ -553,7 +629,7 @@ namespace Intersect_Updater
                         {
                             //Queue File Up
                             UpdateList.Enqueue(new Update(Path.Combine(currentFolder,file.Name),file));
-                            UpdateSize += file.Size ?? 0;
+                            TotalUpdateSize += file.Size ?? 0;
                         }
                         else
                         {
@@ -571,7 +647,7 @@ namespace Intersect_Updater
                             if (md5Hash != file.Md5Checksum || length != file.Size)
                             {
                                 UpdateList.Enqueue(new Update(Path.Combine(currentFolder, file.Name), file));
-                                UpdateSize += file.Size ?? 0;
+                                TotalUpdateSize += file.Size ?? 0;
                             }
                         }
                     }

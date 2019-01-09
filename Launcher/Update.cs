@@ -12,10 +12,18 @@ namespace Intersect_Updater
         public string FilePath;
         public File UpdateFile;
 
+        public int SpeedUpdateTime;
+        public long BytesDownloaded;
+        public long Speed;
+
         public Update(string path, File file)
         {
             FilePath = path;
             UpdateFile = file;
+
+            SpeedUpdateTime = 0;
+            BytesDownloaded = 0;
+            Speed = 0;
         }
     }
 }
