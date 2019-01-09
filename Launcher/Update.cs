@@ -20,10 +20,6 @@ namespace Intersect_Updater
         {
             FilePath = path;
             UpdateFile = file;
-
-            SpeedUpdateTime = 0;
-            BytesDownloaded = 0;
-            Speed = 0;
         }
     }
 }

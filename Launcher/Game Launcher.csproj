@@ -98,6 +98,9 @@
     <Compile Include="TransparentLabel.cs">
       <SubType>Component</SubType>
     </Compile>
+    <Compile Include="TransparentPanel.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Include="Update.cs" />
     <EmbeddedResource Include="frmUpdater.resx">
       <DependentUpon>frmUpdater.cs</DependentUpon>

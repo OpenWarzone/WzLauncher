@@ -22,6 +22,7 @@ using Newtonsoft.Json;
 using FolderSelect;
 using File = System.IO.File;
 using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace Intersect_Updater
 {
@@ -41,15 +42,111 @@ namespace Intersect_Updater
         private static Thread[] UpdateThreads = new Thread[4/*10*/];
         private TransparentLabel lbl;
         private TransparentLabel lblPercent;
+        private TransparentLabel lblCloseButton;
+        private TransparentLabel lblMinimizeButton;
+
+        /*
+        [DllImport("user32.dll")]
+        internal static extern int SetWindowCompositionAttribute(IntPtr hwnd, ref WindowCompositionAttributeData data);
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct WindowCompositionAttributeData
+        {
+            public WindowCompositionAttribute Attribute;
+            public IntPtr Data;
+            public int SizeOfData;
+        }
+
+        internal enum WindowCompositionAttribute
+        {
+            // ...
+            WCA_ACCENT_POLICY = 19
+            // ...
+        }
+
+        internal enum AccentState
+        {
+            ACCENT_DISABLED = 0,
+            ACCENT_ENABLE_GRADIENT = 1,
+            ACCENT_ENABLE_TRANSPARENTGRADIENT = 2,
+            ACCENT_ENABLE_BLURBEHIND = 3,
+            ACCENT_INVALID_STATE = 4
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        internal struct AccentPolicy
+        {
+            public AccentState AccentState;
+            public int AccentFlags;
+            public int GradientColor;
+            public int AnimationId;
+        }
+
+        internal void EnableBlur()
+        {
+            var accent = new AccentPolicy();
+            var accentStructSize = Marshal.SizeOf(accent);
+            accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
+
+            var accentPtr = Marshal.AllocHGlobal(accentStructSize);
+            Marshal.StructureToPtr(accent, accentPtr, false);
+
+            var data = new WindowCompositionAttributeData();
+            data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
+            data.SizeOfData = accentStructSize;
+            data.Data = accentPtr;
+
+            SetWindowCompositionAttribute(this.Handle, ref data);
+
+            Marshal.FreeHGlobal(accentPtr);
+
+            //SetWindowCompositionAttribute(this.Handle, )
+        }
+
+        public static void EnableBlur(IntPtr HWnd, bool hasFrame = true)
+        {
+
+            AccentPolicy accent = new AccentPolicy();
+            accent.AccentState = AccentState.ACCENT_ENABLE_BLURBEHIND;
+            if (hasFrame)
+                accent.AccentFlags = 0x20 | 0x40 | 0x80 | 0x100;
+
+            int accentStructSize = Marshal.SizeOf(accent);
+
+            IntPtr accentPtr = Marshal.AllocHGlobal(accentStructSize);
+            Marshal.StructureToPtr(accent, accentPtr, false);
+
+            WindowCompositionAttributeData data = new WindowCompositionAttributeData();
+            data.Attribute = WindowCompositionAttribute.WCA_ACCENT_POLICY;
+            data.SizeOfData = accentStructSize;
+            data.Data = accentPtr;
+
+            SetWindowCompositionAttribute(HWnd, ref data);
+
+            Marshal.FreeHGlobal(accentPtr);
+        }*/
 
         public frmUpdater()
         {
             InitializeComponent();
+
+            //EnableBlur();
+            //this.BackColor = Color.FromArgb(128, 0, 0, 0);
+            //EnableBlur(this.Handle, false);
+
             lbl = new TransparentLabel(lblStatus);
             lbl.ForeColor = Color.White;
 
             lblPercent = new TransparentLabel(percentLabel);
             lblPercent.ForeColor = Color.LightBlue;
+
+            lblCloseButton = new TransparentLabel(CloseButton);
+            lblCloseButton.Click += CloseButton_Click;
+            lblMinimizeButton = new TransparentLabel(MinimizeButton);
+            lblMinimizeButton.Click += MinimizeButton_Click;
+
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon.Visible = false;
         }
 
         private void frmUpdater_Load(object sender, EventArgs e)
@@ -460,6 +557,19 @@ namespace Intersect_Updater
             lblPercent.Visible = true;
             lblPercent.CreateGraphics().Clear(Color.Transparent);
             lblPercent.Text = (int)percentage + "% complete";
+
+            if (currentSpeed <= 0 || double.IsInfinity(currentSpeed) || double.IsNaN(currentSpeed))
+            {
+                // FFS, 64 character limit... lol!
+                //notifyIcon.Text = "Star Wars: Warzone - Updating - " + GetBytesCompletedString(DownloadedBytes, TotalUpdateSize) + " at " + GetBytesPerSecondString(0) + " " + lblPercent.Text;
+                notifyIcon.Text = "Star Wars: Warzone - Updating - " + lblPercent.Text + " - " + GetBytesPerSecondString(0);
+            }
+            else
+            {
+                // FFS, 64 character limit... lol!
+                //notifyIcon.Text = "Star Wars: Warzone - Updating - " + GetBytesCompletedString(DownloadedBytes, TotalUpdateSize) + " at " + GetBytesPerSecondString(currentSpeed) + " " + lblPercent.Text;
+                notifyIcon.Text = "Star Wars: Warzone - Updating - " + lblPercent.Text + " - " + GetBytesPerSecondString(currentSpeed);
+            }
         }
 
         private async Task Wait()
@@ -694,7 +804,9 @@ namespace Intersect_Updater
             
             lblStatus.Text = text + new string('.', DotCount);
             lbl.Text = text + new string('.', DotCount);
-            lbl.MeasureString = text + new string('.', 3);// @"Checking for updates, please wait" + new string('.', 3);
+            lbl.MeasureString = text + new string('.', 3);
+
+            notifyIcon.Text = "Star Wars: Warzone - Checking for updates...";
         }
 
         private void tmrChecking_Tick(object sender, EventArgs e)
@@ -706,6 +818,10 @@ namespace Intersect_Updater
                 UpdateStatus(@"Checking for updates, please wait" + new string('.', DotCount));
             }*/
         }
+
+        //
+        // Moddb, jkhub, discord icons...
+        //
 
         private void pictureBox1_Click(object sender, EventArgs e)
         {// Discord
@@ -720,6 +836,96 @@ namespace Intersect_Updater
         private void pictureBox1_Click_1(object sender, EventArgs e)
         {// Moddb
             System.Diagnostics.Process.Start("https://www.moddb.com/mods/star-wars-warzone");
+        }
+
+        //
+        // Window close control...
+        //
+
+        private void CloseButton_Click(object sender, EventArgs e)
+        {
+            this.Close();
+
+            try
+            {
+                foreach (Process proc in Process.GetProcessesByName("Star Wars: Warzone - Launcher"))
+                {
+                    proc.Kill();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        //
+        // System tray and minimize button support...
+        //
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            //if the form is minimized  
+            //hide it from the task bar  
+            //and show the system tray icon (represented by the NotifyIcon control)  
+            if (this.WindowState == FormWindowState.Minimized)
+            {
+                Hide();
+                notifyIcon.Visible = true;
+            }
+        }
+
+        private void notifyIcon_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            Show();
+            this.WindowState = FormWindowState.Normal;
+            notifyIcon.Visible = false;
+        }
+
+        private void MinimizeButton_Click(object sender, EventArgs e)
+        {
+            Hide();
+            this.WindowState = FormWindowState.Minimized;
+            notifyIcon.Visible = true;
+
+            var timer = DateTime.Now - SpeedStartTime;
+
+            if (timer.TotalSeconds > 0)
+            {
+                UpdateStatus();
+            }
+            else
+            {
+                notifyIcon.Text = "Star Wars: Warzone - Checking for updates...";
+            }
+        }
+
+        //
+        // Borderless window moving controls...
+        //
+
+        int     mouseX = 0, mouseY = 0;
+        bool    mouseDown = false;
+
+        private void WindowMovePanel_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (mouseDown)
+            {
+                mouseX = MousePosition.X - (WindowMovePanel.Size.Width / 2);
+                mouseY = MousePosition.Y - (WindowMovePanel.Size.Height / 2);
+
+                this.SetDesktopLocation(mouseX, mouseY);
+            }
+        }
+
+        private void WindowMovePanel_MouseUp(object sender, MouseEventArgs e)
+        {
+            mouseDown = false;
+        }
+
+        private void WindowMovePanel_MouseDown(object sender, MouseEventArgs e)
+        {
+            mouseDown = true;
         }
     }
 }

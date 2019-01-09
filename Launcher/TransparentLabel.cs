@@ -16,6 +16,7 @@ public class TransparentLabel : Control
         this.Parent = label.Parent;
         this.BringToFront();
         this.textAlign = label.TextAlign;
+        this.ForeColor = label.ForeColor;
         label.Dispose();
 
         TabStop = false;

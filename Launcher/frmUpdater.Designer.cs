@@ -38,6 +38,10 @@
             this.icon_discord = new System.Windows.Forms.PictureBox();
             this.icon_jkhub = new System.Windows.Forms.PictureBox();
             this.icon_moddb = new System.Windows.Forms.PictureBox();
+            this.CloseButton = new System.Windows.Forms.Label();
+            this.MinimizeButton = new System.Windows.Forms.Label();
+            this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.WindowMovePanel = new TransparentPanel();
             ((System.ComponentModel.ISupportInitialize)(this.picBackground)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_discord)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_jkhub)).BeginInit();
@@ -57,7 +61,7 @@
             // 
             // picBackground
             // 
-            this.picBackground.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
+            this.picBackground.BackColor = System.Drawing.Color.Black;
             this.picBackground.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.picBackground.Dock = System.Windows.Forms.DockStyle.Fill;
             this.picBackground.Location = new System.Drawing.Point(0, 0);
@@ -139,12 +143,59 @@
             this.icon_moddb.TabStop = false;
             this.icon_moddb.Click += new System.EventHandler(this.pictureBox1_Click_1);
             // 
+            // CloseButton
+            // 
+            this.CloseButton.AutoSize = true;
+            this.CloseButton.BackColor = System.Drawing.Color.Transparent;
+            this.CloseButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.CloseButton.Location = new System.Drawing.Point(700, 9);
+            this.CloseButton.Name = "CloseButton";
+            this.CloseButton.Size = new System.Drawing.Size(20, 20);
+            this.CloseButton.TabIndex = 6;
+            this.CloseButton.Text = "X";
+            this.CloseButton.Click += new System.EventHandler(this.CloseButton_Click);
+            // 
+            // MinimizeButton
+            // 
+            this.MinimizeButton.AutoSize = true;
+            this.MinimizeButton.BackColor = System.Drawing.Color.Transparent;
+            this.MinimizeButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.MinimizeButton.Location = new System.Drawing.Point(676, 9);
+            this.MinimizeButton.Name = "MinimizeButton";
+            this.MinimizeButton.Size = new System.Drawing.Size(18, 20);
+            this.MinimizeButton.TabIndex = 7;
+            this.MinimizeButton.Text = "_";
+            this.MinimizeButton.Click += new System.EventHandler(this.MinimizeButton_Click);
+            // 
+            // notifyIcon
+            // 
+            this.notifyIcon.BalloonTipText = "Minimized to system tray.";
+            this.notifyIcon.BalloonTipTitle = "Star Wars: Warzone - Launcher";
+            this.notifyIcon.Icon = ((System.Drawing.Icon)(resources.GetObject("notifyIcon.Icon")));
+            this.notifyIcon.Text = "Star Wars: Warzone - Launcher";
+            this.notifyIcon.Visible = true;
+            this.notifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseDoubleClick);
+            // 
+            // WindowMovePanel
+            // 
+            this.WindowMovePanel.Location = new System.Drawing.Point(3, 0);
+            this.WindowMovePanel.Name = "WindowMovePanel";
+            this.WindowMovePanel.Opacity = 0;
+            this.WindowMovePanel.Size = new System.Drawing.Size(729, 37);
+            this.WindowMovePanel.TabIndex = 9;
+            this.WindowMovePanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseDown);
+            this.WindowMovePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseMove);
+            this.WindowMovePanel.MouseUp += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseUp);
+            // 
             // frmUpdater
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(732, 425);
+            this.Controls.Add(this.CloseButton);
+            this.Controls.Add(this.MinimizeButton);
+            this.Controls.Add(this.WindowMovePanel);
             this.Controls.Add(this.icon_moddb);
             this.Controls.Add(this.icon_jkhub);
             this.Controls.Add(this.icon_discord);
@@ -152,7 +203,7 @@
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.lblStatus);
             this.Controls.Add(this.picBackground);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MaximizeBox = false;
             this.Name = "frmUpdater";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen;
@@ -163,12 +214,12 @@
             ((System.ComponentModel.ISupportInitialize)(this.icon_jkhub)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_moddb)).EndInit();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Label lblStatus;
         private System.Windows.Forms.PictureBox picBackground;
         private System.Windows.Forms.Timer tmrChecking;
@@ -177,6 +228,10 @@
         private System.Windows.Forms.PictureBox icon_discord;
         private System.Windows.Forms.PictureBox icon_jkhub;
         private System.Windows.Forms.PictureBox icon_moddb;
+        private System.Windows.Forms.Label CloseButton;
+        private System.Windows.Forms.Label MinimizeButton;
+        private TransparentPanel WindowMovePanel;
+        private System.Windows.Forms.NotifyIcon notifyIcon;
     }
 }
 
