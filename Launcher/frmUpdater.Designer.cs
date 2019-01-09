@@ -38,14 +38,16 @@
             this.icon_discord = new System.Windows.Forms.PictureBox();
             this.icon_jkhub = new System.Windows.Forms.PictureBox();
             this.icon_moddb = new System.Windows.Forms.PictureBox();
-            this.CloseButton = new System.Windows.Forms.Label();
-            this.MinimizeButton = new System.Windows.Forms.Label();
             this.notifyIcon = new System.Windows.Forms.NotifyIcon(this.components);
+            this.buttonClose = new System.Windows.Forms.PictureBox();
+            this.buttonMinimize = new System.Windows.Forms.PictureBox();
             this.WindowMovePanel = new TransparentPanel();
             ((System.ComponentModel.ISupportInitialize)(this.picBackground)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_discord)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_jkhub)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_moddb)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.buttonClose)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.buttonMinimize)).BeginInit();
             this.SuspendLayout();
             // 
             // lblStatus
@@ -143,30 +145,6 @@
             this.icon_moddb.TabStop = false;
             this.icon_moddb.Click += new System.EventHandler(this.pictureBox1_Click_1);
             // 
-            // CloseButton
-            // 
-            this.CloseButton.AutoSize = true;
-            this.CloseButton.BackColor = System.Drawing.Color.Transparent;
-            this.CloseButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.CloseButton.Location = new System.Drawing.Point(700, 9);
-            this.CloseButton.Name = "CloseButton";
-            this.CloseButton.Size = new System.Drawing.Size(20, 20);
-            this.CloseButton.TabIndex = 6;
-            this.CloseButton.Text = "X";
-            this.CloseButton.Click += new System.EventHandler(this.CloseButton_Click);
-            // 
-            // MinimizeButton
-            // 
-            this.MinimizeButton.AutoSize = true;
-            this.MinimizeButton.BackColor = System.Drawing.Color.Transparent;
-            this.MinimizeButton.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
-            this.MinimizeButton.Location = new System.Drawing.Point(676, 9);
-            this.MinimizeButton.Name = "MinimizeButton";
-            this.MinimizeButton.Size = new System.Drawing.Size(18, 20);
-            this.MinimizeButton.TabIndex = 7;
-            this.MinimizeButton.Text = "_";
-            this.MinimizeButton.Click += new System.EventHandler(this.MinimizeButton_Click);
-            // 
             // notifyIcon
             // 
             this.notifyIcon.BalloonTipText = "Minimized to system tray.";
@@ -176,12 +154,48 @@
             this.notifyIcon.Visible = true;
             this.notifyIcon.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.notifyIcon_MouseDoubleClick);
             // 
+            // buttonClose
+            // 
+            this.buttonClose.BackColor = System.Drawing.Color.Transparent;
+            this.buttonClose.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.buttonClose.Image = ((System.Drawing.Image)(resources.GetObject("buttonClose.Image")));
+            this.buttonClose.InitialImage = ((System.Drawing.Image)(resources.GetObject("buttonClose.InitialImage")));
+            this.buttonClose.Location = new System.Drawing.Point(680, 0);
+            this.buttonClose.Margin = new System.Windows.Forms.Padding(0);
+            this.buttonClose.Name = "buttonClose";
+            this.buttonClose.Size = new System.Drawing.Size(52, 23);
+            this.buttonClose.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.buttonClose.TabIndex = 10;
+            this.buttonClose.TabStop = false;
+            this.buttonClose.Click += new System.EventHandler(this.buttonClose_Click);
+            this.buttonClose.MouseEnter += new System.EventHandler(this.buttonClose_MouseHover);
+            this.buttonClose.MouseLeave += new System.EventHandler(this.buttonClose_MouseLeave);
+            this.buttonClose.MouseHover += new System.EventHandler(this.buttonClose_MouseHover);
+            // 
+            // buttonMinimize
+            // 
+            this.buttonMinimize.BackColor = System.Drawing.Color.Transparent;
+            this.buttonMinimize.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
+            this.buttonMinimize.Image = ((System.Drawing.Image)(resources.GetObject("buttonMinimize.Image")));
+            this.buttonMinimize.InitialImage = ((System.Drawing.Image)(resources.GetObject("buttonMinimize.InitialImage")));
+            this.buttonMinimize.Location = new System.Drawing.Point(646, 0);
+            this.buttonMinimize.Margin = new System.Windows.Forms.Padding(0);
+            this.buttonMinimize.Name = "buttonMinimize";
+            this.buttonMinimize.Size = new System.Drawing.Size(34, 23);
+            this.buttonMinimize.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
+            this.buttonMinimize.TabIndex = 11;
+            this.buttonMinimize.TabStop = false;
+            this.buttonMinimize.Click += new System.EventHandler(this.buttonMinimize_Click);
+            this.buttonMinimize.MouseEnter += new System.EventHandler(this.buttonMinimize_MouseHover);
+            this.buttonMinimize.MouseLeave += new System.EventHandler(this.buttonMinimize_MouseLeave);
+            this.buttonMinimize.MouseHover += new System.EventHandler(this.buttonMinimize_MouseHover);
+            // 
             // WindowMovePanel
             // 
             this.WindowMovePanel.Location = new System.Drawing.Point(3, 0);
             this.WindowMovePanel.Name = "WindowMovePanel";
             this.WindowMovePanel.Opacity = 0;
-            this.WindowMovePanel.Size = new System.Drawing.Size(729, 37);
+            this.WindowMovePanel.Size = new System.Drawing.Size(586, 37);
             this.WindowMovePanel.TabIndex = 9;
             this.WindowMovePanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseDown);
             this.WindowMovePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseMove);
@@ -193,8 +207,8 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(732, 425);
-            this.Controls.Add(this.CloseButton);
-            this.Controls.Add(this.MinimizeButton);
+            this.Controls.Add(this.buttonMinimize);
+            this.Controls.Add(this.buttonClose);
             this.Controls.Add(this.WindowMovePanel);
             this.Controls.Add(this.icon_moddb);
             this.Controls.Add(this.icon_jkhub);
@@ -213,8 +227,9 @@
             ((System.ComponentModel.ISupportInitialize)(this.icon_discord)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_jkhub)).EndInit();
             ((System.ComponentModel.ISupportInitialize)(this.icon_moddb)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.buttonClose)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.buttonMinimize)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
@@ -228,10 +243,10 @@
         private System.Windows.Forms.PictureBox icon_discord;
         private System.Windows.Forms.PictureBox icon_jkhub;
         private System.Windows.Forms.PictureBox icon_moddb;
-        private System.Windows.Forms.Label CloseButton;
-        private System.Windows.Forms.Label MinimizeButton;
         private TransparentPanel WindowMovePanel;
         private System.Windows.Forms.NotifyIcon notifyIcon;
+        private System.Windows.Forms.PictureBox buttonClose;
+        private System.Windows.Forms.PictureBox buttonMinimize;
     }
 }
 

@@ -42,8 +42,6 @@ namespace Intersect_Updater
         private static Thread[] UpdateThreads = new Thread[4/*10*/];
         private TransparentLabel lbl;
         private TransparentLabel lblPercent;
-        private TransparentLabel lblCloseButton;
-        private TransparentLabel lblMinimizeButton;
 
         /*
         [DllImport("user32.dll")]
@@ -140,14 +138,19 @@ namespace Intersect_Updater
             lblPercent = new TransparentLabel(percentLabel);
             lblPercent.ForeColor = Color.LightBlue;
 
-            lblCloseButton = new TransparentLabel(CloseButton);
-            lblCloseButton.Click += CloseButton_Click;
-            lblMinimizeButton = new TransparentLabel(MinimizeButton);
-            lblMinimizeButton.Click += MinimizeButton_Click;
-
             this.WindowState = FormWindowState.Normal;
             notifyIcon.Visible = false;
+
+            //buttonClose.BackColor = Color.Transparent;
+            //buttonMinimize.BackColor = Color.Transparent;
+
+            SpeedStartTime = DateTime.Now;
         }
+
+        Image closeImage;
+        Image closeHoverImage;
+        Image minimizeImage;
+        Image minimizeHoverImage;
 
         private void frmUpdater_Load(object sender, EventArgs e)
         {
@@ -200,7 +203,16 @@ namespace Intersect_Updater
                     {
                         using (var ms = new MemoryStream(launcherImage))
                         {
+                            //
+                            // Make all the transparent buttons we want to use, well, umm, transparent... WTF c#!!!
+                            //
                             picBackground.BackgroundImage = Bitmap.FromStream(ms);
+
+                            picBackground.Controls.Add(buttonClose);
+                            buttonClose.BackColor = Color.Transparent;
+                            
+                            picBackground.Controls.Add(buttonMinimize);
+                            buttonMinimize.BackColor = Color.Transparent;
 
                             picBackground.Controls.Add(icon_discord);
                             icon_discord.BackColor = Color.Transparent;
@@ -218,6 +230,51 @@ namespace Intersect_Updater
                     }
                 }
             }
+
+            closeImage = buttonClose.Image;
+
+            if (File.Exists(settings.Background))
+            {
+                var closeHover = File.ReadAllBytes("launcherData/buttonCloseHover.png");
+                try
+                {
+                    using (var ms = new MemoryStream(closeHover))
+                    {
+                        closeHoverImage = Bitmap.FromStream(ms);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    closeHoverImage = buttonClose.Image;
+                }
+            }
+            else
+            {
+                closeHoverImage = buttonClose.Image;
+            }
+
+            minimizeImage = buttonMinimize.Image;
+
+            if (File.Exists(settings.Background))
+            {
+                var minimizeHover = File.ReadAllBytes("launcherData/buttonMinimizeHover.png");
+                try
+                {
+                    using (var ms = new MemoryStream(minimizeHover))
+                    {
+                        minimizeHoverImage = Bitmap.FromStream(ms);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    minimizeHoverImage = buttonMinimize.Image;
+                }
+            }
+            else
+            {
+                minimizeHoverImage = buttonMinimize.Image;
+            }
+
             this.Text = settings.UpdaterTitle;
             Task.Run(Run);
         }
@@ -842,7 +899,7 @@ namespace Intersect_Updater
         // Window close control...
         //
 
-        private void CloseButton_Click(object sender, EventArgs e)
+        private void buttonClose_Click(object sender, EventArgs e)
         {
             this.Close();
 
@@ -857,6 +914,16 @@ namespace Intersect_Updater
             {
                 MessageBox.Show(ex.Message);
             }
+        }
+
+        private void buttonClose_MouseHover(object sender, EventArgs e)
+        {
+            buttonClose.Image = closeHoverImage;
+        }
+
+        private void buttonClose_MouseLeave(object sender, EventArgs e)
+        {
+            buttonClose.Image = closeImage;
         }
 
         //
@@ -882,7 +949,7 @@ namespace Intersect_Updater
             notifyIcon.Visible = false;
         }
 
-        private void MinimizeButton_Click(object sender, EventArgs e)
+        private void buttonMinimize_Click(object sender, EventArgs e)
         {
             Hide();
             this.WindowState = FormWindowState.Minimized;
@@ -890,14 +957,24 @@ namespace Intersect_Updater
 
             var timer = DateTime.Now - SpeedStartTime;
 
-            if (timer.TotalSeconds > 0)
+            /*if (timer.TotalSeconds > 0)
             {
                 UpdateStatus();
             }
-            else
+            else*/
             {
                 notifyIcon.Text = "Star Wars: Warzone - Checking for updates...";
             }
+        }
+
+        private void buttonMinimize_MouseHover(object sender, EventArgs e)
+        {
+            buttonMinimize.Image = minimizeHoverImage;
+        }
+
+        private void buttonMinimize_MouseLeave(object sender, EventArgs e)
+        {
+            buttonMinimize.Image = minimizeImage;
         }
 
         //
