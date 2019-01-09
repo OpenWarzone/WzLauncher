@@ -195,7 +195,7 @@
             this.WindowMovePanel.Location = new System.Drawing.Point(3, 0);
             this.WindowMovePanel.Name = "WindowMovePanel";
             this.WindowMovePanel.Opacity = 0;
-            this.WindowMovePanel.Size = new System.Drawing.Size(586, 37);
+            this.WindowMovePanel.Size = new System.Drawing.Size(640, 37);
             this.WindowMovePanel.TabIndex = 9;
             this.WindowMovePanel.MouseDown += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseDown);
             this.WindowMovePanel.MouseMove += new System.Windows.Forms.MouseEventHandler(this.WindowMovePanel_MouseMove);
