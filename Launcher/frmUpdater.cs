@@ -410,7 +410,7 @@ namespace Intersect_Updater
                 var workingDir = Path.GetDirectoryName(path);
                 var psi = new ProcessStartInfo(path);
                 psi.WorkingDirectory = workingDir;
-                psi.Arguments = "+set r_renderer rd-warzone +set fs_game warzone +set g_gametype 11 +set logfile 2";
+                psi.Arguments = "+set r_renderer rd-warzone +set fs_game warzone +set g_gametype 11 +set logfile 2 +devmap menu";
                 Process.Start(psi);
                 BeginInvoke((Action)(() => Close()));
             }
@@ -433,6 +433,8 @@ namespace Intersect_Updater
 
         private bool MakeBaseDirLink(string gameDataFolder)
         {
+            //MessageBox.Show("Looking for base folder...", "DEBUG");
+
             if (!Directory.Exists(gameDataFolder + @"/base"))
             {
                 // Default "old skool" default JKA base directory...
@@ -453,7 +455,7 @@ namespace Intersect_Updater
                         symLink = steamSymbolicLink;
                     }
                 }
-
+                
                 if (!Directory.Exists(symLink))
                 {// Try old skool but on D: drive...
                     if (Directory.Exists(DsymbolicLink))
@@ -467,6 +469,27 @@ namespace Intersect_Updater
                     if (Directory.Exists(DsteamSymbolicLink))
                     {// Exists in steam, awesome! Use it...
                         symLink = DsteamSymbolicLink;
+                    }
+                }
+
+                if (Directory.Exists(symLink))
+                {// Make a link to original JKA version...
+                    symlinkFlags = SYMBOLIC_LINK_FLAG_DIRECTORY;// | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                    CreateSymbolicLink(fileName, symLink, symlinkFlags/*SymbolicLink.Directory*/);
+
+                    if (Directory.Exists(fileName))
+                    {
+                        //string messageBoxText2 = "Created symlink from " + fileName + " to " + symLink;
+                        //string caption2 = "Thanks windows...";
+                        //MessageBox.Show(messageBoxText2, caption2);
+                        return true;
+                    }
+                    else
+                    {
+                        string messageBoxText = "Windows has silently blocked the creation of a link to your jedi academy base folder.\n\nPlease try running the launcher as admin. If this does not work then copy the 'base' folder from your Jedi Academy 'gamedata' folder into the warzone 'gamedata' folder.";
+                        string caption = "Thanks windows...";
+                        MessageBox.Show(messageBoxText, caption);
+                        return false;
                     }
                 }
 
@@ -485,6 +508,27 @@ namespace Intersect_Updater
                         {
                             symLink = fullDir;
                         }
+                    }
+                }
+
+                if (Directory.Exists(symLink))
+                {// Make a link to steam copy...
+                    symlinkFlags = SYMBOLIC_LINK_FLAG_DIRECTORY;// | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                    CreateSymbolicLink(fileName, symLink, symlinkFlags/*SymbolicLink.Directory*/);
+
+                    if (Directory.Exists(fileName))
+                    {
+                        //string messageBoxText2 = "Created symlink from " + fileName + " to " + symLink;
+                        //string caption2 = "Thanks windows...";
+                        //MessageBox.Show(messageBoxText2, caption2);
+                        return true;
+                    }
+                    else
+                    {
+                        string messageBoxText = "Windows has silently blocked the creation of a link to your jedi academy base folder.\n\nPlease try running the launcher as admin. If this does not work then copy the 'base' folder from your Jedi Academy 'gamedata' folder into the warzone 'gamedata' folder.";
+                        string caption = "Thanks windows...";
+                        MessageBox.Show(messageBoxText, caption);
+                        return false;
                     }
                 }
 
@@ -530,8 +574,16 @@ namespace Intersect_Updater
                     MessageBox.Show(messageBoxText, caption);
                 }
 
-                symlinkFlags = SYMBOLIC_LINK_FLAG_DIRECTORY | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+                symlinkFlags = SYMBOLIC_LINK_FLAG_DIRECTORY;// | SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
                 CreateSymbolicLink(fileName, symLink, symlinkFlags/*SymbolicLink.Directory*/);
+
+                if (!Directory.Exists(fileName))
+                {
+                    string messageBoxText = "Windows has silently blocked the creation of a link to your jedi academy base folder.\n\nPlease try running the launcher as admin. If this does not work then copy the 'base' folder from your Jedi Academy 'gamedata' folder into the warzone 'gamedata' folder.";
+                    string caption = "Thanks windows...";
+                    MessageBox.Show(messageBoxText, caption);
+                    return false;
+                }
             }
 
             return true;
