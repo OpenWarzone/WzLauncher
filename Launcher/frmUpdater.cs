@@ -29,7 +29,7 @@ namespace Intersect_Updater
     public partial class frmUpdater : Form
     {
         public Settings settings;
-        private static readonly string[] Scopes = new[] { DriveService.Scope.DriveFile, DriveService.Scope.Drive };
+        private static readonly string[] Scopes = new[] { /*DriveService.Scope.DriveFile,*/ DriveService.Scope.DriveReadonly, DriveService.Scope.DriveMetadataReadonly };
         private static ConcurrentQueue<Update> UpdateList = new ConcurrentQueue<Update>();
         private static long TotalUpdateSize = 0;
         private static long DownloadedBytes = 0;
@@ -721,6 +721,8 @@ namespace Intersect_Updater
         private bool DownloadUpdate(DriveService service,Update update)
         {
             var request = service.Files.Get(update.UpdateFile.Id);
+            request.MediaDownloader.ChunkSize = 1024 * 1024; // UQ1: Added - 1K chunk sizes to improve speed display...
+
             var updatePath = Path.GetFullPath(update.FilePath);
             if (updatePath == Path.GetFullPath(EntryAssemblyInfo.ExecutablePath))
             {
@@ -780,8 +782,10 @@ namespace Intersect_Updater
                                 break;
                             }
                             case DownloadStatus.Failed:
+                            //case DownloadStatus.NotStarted:
                             {
-                                Console.WriteLine("Download failed.");
+                                //Console.WriteLine("Download failed.");
+                                //MessageBox.Show(@"A file download failed: " + update.FilePath + "\n" + service.Replies.ToString());
                                 succeeded = false;
                                 break;
                             }
@@ -802,7 +806,7 @@ namespace Intersect_Updater
             listRequest.Q = "'" + folderID + "' in parents";
             listRequest.PageSize = 100;
             if (!string.IsNullOrEmpty(nextPageToken)) listRequest.PageToken = nextPageToken;
-            listRequest.Fields = "nextPageToken, files(id, name, md5Checksum, size, mimeType)";
+            listRequest.Fields = "nextPageToken, files(id, name, md5Checksum, size, webViewLink, mimeType)";
 
             //Start at root, look for all files that we don't have or files that need updating and grab them!
             // List files.
