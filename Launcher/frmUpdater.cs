@@ -425,7 +425,7 @@ namespace Intersect_Updater
                     {
                         UpdateThreads[i] = new Thread(DownloadFiles);
                         UpdateThreads[i].Start();
-                        System.Threading.Thread.Sleep(5000); // 5 sec between starting new download threads...
+                        //System.Threading.Thread.Sleep(5000); // 5 sec between starting new download threads...
                     }
                 }
 
@@ -795,7 +795,20 @@ namespace Intersect_Updater
 
             if (SpeedDownloadedBytes > 0)
             {
-                BeginInvoke((Action)(() => UpdateStatus()));
+                try
+                {
+                    BeginInvoke((Action)(() => UpdateStatus()));
+                }
+                catch (Exception ex)
+                {
+#if __DEBUG__
+                    //Console.WriteLine(ex.Message);
+                    
+                    // This only happens when the main app has been closed but the debug console is still up, so exit the app completely...
+                    System.Windows.Forms.Application.Exit();
+                    System.Environment.Exit(1);
+#endif //__DEBUG__
+                }
             }
         }
 
@@ -1320,19 +1333,28 @@ namespace Intersect_Updater
                         {
                             //if file size or md5 doesn't match, queue file up
                             long length = new System.IO.FileInfo(Path.Combine(currentFolder, file.Name)).Length;
-                            string md5Hash = "";
-                            using (var md5 = MD5.Create())
-                            {
-                                using (var stream =
-                                    new BufferedStream(File.OpenRead(Path.Combine(currentFolder, file.Name)), 1200000))
-                                {
-                                    md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
-                                }
-                            }
-                            if (md5Hash != file.Md5Checksum || length != file.Size)
-                            {
+
+                            if (length != file.Size)
+                            {// Length does not match, so we can skip the md5 check and simply enqueue the update...
                                 UpdateList.Enqueue(new Update(Path.Combine(currentFolder, file.Name), file));
                                 TotalUpdateSize += file.Size ?? 0;
+                            }
+                            else
+                            {
+                                string md5Hash = "";
+                                using (var md5 = MD5.Create())
+                                {
+                                    using (var stream =
+                                        new BufferedStream(File.OpenRead(Path.Combine(currentFolder, file.Name)), 1200000))
+                                    {
+                                        md5Hash = BitConverter.ToString(md5.ComputeHash(stream)).Replace("-", "").ToLowerInvariant();
+                                    }
+                                }
+                                if (md5Hash != file.Md5Checksum || length != file.Size)
+                                {
+                                    UpdateList.Enqueue(new Update(Path.Combine(currentFolder, file.Name), file));
+                                    TotalUpdateSize += file.Size ?? 0;
+                                }
                             }
                         }
                     }
